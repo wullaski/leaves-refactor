@@ -1,0 +1,109 @@
+import { describe, it, expect } from 'vitest';
+import { parseCommand } from '../commandParser';
+
+describe('commandParser', () => {
+  describe('movement commands', () => {
+    it('should parse "go north"', () => {
+      const result = parseCommand('go north');
+      expect(result.action).toBe('move');
+      expect(result.direction).toBe('north');
+    });
+
+    it('should parse "north" shorthand', () => {
+      const result = parseCommand('north');
+      expect(result.action).toBe('move');
+      expect(result.direction).toBe('north');
+    });
+
+    it('should parse "n" abbreviation', () => {
+      const result = parseCommand('n');
+      expect(result.action).toBe('move');
+      expect(result.direction).toBe('north');
+    });
+
+    it('should handle all directions', () => {
+      const directions = ['north', 'south', 'east', 'west', 'up', 'down'];
+      directions.forEach(dir => {
+        const result = parseCommand(`go ${dir}`);
+        expect(result.action).toBe('move');
+        expect(result.direction).toBe(dir);
+      });
+    });
+  });
+
+  describe('observation commands', () => {
+    it('should parse "look"', () => {
+      const result = parseCommand('look');
+      expect(result.action).toBe('look');
+    });
+
+    it('should parse "examine sword"', () => {
+      const result = parseCommand('examine sword');
+      expect(result.action).toBe('examine');
+      expect(result.target).toBe('sword');
+    });
+
+    it('should parse "inventory"', () => {
+      const result = parseCommand('inventory');
+      expect(result.action).toBe('inventory');
+    });
+
+    it('should parse "i" for inventory', () => {
+      const result = parseCommand('i');
+      expect(result.action).toBe('inventory');
+    });
+  });
+
+  describe('item commands', () => {
+    it('should parse "take sword"', () => {
+      const result = parseCommand('take sword');
+      expect(result.action).toBe('take');
+      expect(result.target).toBe('sword');
+    });
+
+    it('should parse "drop sword"', () => {
+      const result = parseCommand('drop sword');
+      expect(result.action).toBe('drop');
+      expect(result.target).toBe('sword');
+    });
+
+    it('should parse "get sword" as take', () => {
+      const result = parseCommand('get sword');
+      expect(result.action).toBe('take');
+      expect(result.target).toBe('sword');
+    });
+  });
+
+  describe('help command', () => {
+    it('should parse "help"', () => {
+      const result = parseCommand('help');
+      expect(result.action).toBe('help');
+    });
+  });
+
+  describe('unknown commands', () => {
+    it('should handle unknown command', () => {
+      const result = parseCommand('dance');
+      expect(result.action).toBe('unknown');
+    });
+
+    it('should handle empty input', () => {
+      const result = parseCommand('');
+      expect(result.action).toBe('unknown');
+    });
+  });
+
+  describe('normalization', () => {
+    it('should trim whitespace', () => {
+      const result = parseCommand('  go north  ');
+      expect(result.action).toBe('move');
+      expect(result.direction).toBe('north');
+    });
+
+    it('should handle mixed case', () => {
+      const result = parseCommand('GO NORTH');
+      expect(result.action).toBe('move');
+      expect(result.direction).toBe('north');
+    });
+  });
+});
