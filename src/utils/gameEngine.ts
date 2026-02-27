@@ -248,19 +248,21 @@ export class GameEngine {
     const player = this.world.players[this.playerId];
     const item = this.world.items[itemId];
     const container = this.world.items[containerId];
+    const room = this.getCurrentRoom();
 
-    // Both must be in inventory
+    // item must be in inventory
     if (!player.inventory.includes(itemId)) {
       return {
         success: false,
         message: `You don't have the ${item.name}.`,
       };
     }
-
-    if (!player.inventory.includes(containerId)) {
+    
+    // container must be in room or inventory
+    if (!room.items.includes(containerId) && !player.inventory.includes(containerId)) {
       return {
         success: false,
-        message: `You don't have the ${container.name}.`,
+        message: `You don't see the ${container.name} here.`,
       };
     }
 
@@ -311,11 +313,12 @@ export class GameEngine {
     const item = this.world.items[itemId];
     const container = this.world.items[containerId];
 
-    // Container must be in inventory
-    if (!player.inventory.includes(containerId)) {
+    // container must be in room or inventory
+    const room = this.getCurrentRoom();
+    if (!room.items.includes(containerId) && !player.inventory.includes(containerId)) {
       return {
         success: false,
-        message: `You don't have the ${container.name}.`,
+        message: `You don't see the ${container.name} here.`,
       };
     }
 

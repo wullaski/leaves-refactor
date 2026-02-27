@@ -222,8 +222,34 @@ describe('GameEngine', () => {
       testWorld.rooms['room1'].items.push('bag', 'coin');
     });
 
-    it('should put item into container', () => {
+    it('should put item into container when both items are in inventory', () => {
       engine.takeItem('bag');
+      engine.takeItem('coin');
+      
+      const result = engine.putItemInContainer('coin', 'bag');
+      
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('put');
+      
+      // Coin should be in bag's containedItems
+      const bag = testWorld.items['bag'];
+      expect(bag.containedItems).toContain('coin');
+      
+      // Coin should be removed from player inventory
+      const player = testWorld.players['player1'];
+      expect(player.inventory).not.toContain('coin');
+    });
+
+    it('should not put item in container if item not in inventory', () => {
+      engine.takeItem('bag');
+      
+      const result = engine.putItemInContainer('coin', 'bag');
+      
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("don't have");
+    });
+
+    it('should put item into container when container is in room', () => {
       engine.takeItem('coin');
       
       const result = engine.putItemInContainer('coin', 'bag');
@@ -317,13 +343,21 @@ describe('GameEngine', () => {
       expect(result.message).toContain("can't put");
     });
 
-    it('should not put item in container not in inventory', () => {
+    it('should not take item from container not in room or inventory', () => {
+      // Put coin in bag and take both
+      engine.takeItem('bag');
       engine.takeItem('coin');
+      engine.putItemInContainer('coin', 'bag');
       
-      const result = engine.putItemInContainer('coin', 'bag');
+      // Drop bag in room, then move to another room
+      engine.dropItem('bag');
+      engine.move('north');
+      
+      // Try to take coin from bag that's in the other room
+      const result = engine.takeItemFromContainer('coin', 'bag');
       
       expect(result.success).toBe(false);
-      expect(result.message).toContain("don't have");
+      expect(result.message).toContain("don't see");
     });
   });
 });
