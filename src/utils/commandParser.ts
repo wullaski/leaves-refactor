@@ -17,7 +17,7 @@ const DIRECTION_MAP: Record<string, Direction> = {
 
 const MOVEMENT_VERBS = ['go', 'move', 'walk', 'run', 'head'];
 const TAKE_VERBS = ['take', 'get', 'grab', 'pickup'];
-const DROP_VERBS = ['drop', 'put'];
+const DROP_VERBS = ['drop'];
 const EXAMINE_VERBS = ['examine', 'inspect', 'look at', 'x'];
 const INVENTORY_VERBS = ['inventory', 'inv', 'i'];
 
@@ -73,9 +73,38 @@ export function parseCommand(input: string): ParsedCommand {
 
   // Check for take
   if (TAKE_VERBS.includes(firstWord) && restWords) {
+    // Check for "take X from Y" pattern
+    const fromMatch = restWords.match(/^(.+?)\s+from\s+(.+)$/);
+    if (fromMatch) {
+      return {
+        action: 'take',
+        target: fromMatch[1],
+        container: fromMatch[2],
+        raw,
+      };
+    }
+    
     return {
       action: 'take',
       target: restWords,
+      raw,
+    };
+  }
+
+  // Check for "put X in Y" pattern
+  if (firstWord === 'put' && restWords) {
+    const inMatch = restWords.match(/^(.+?)\s+in(?:to|side)?\s+(.+)$/);
+    if (inMatch) {
+      return {
+        action: 'put',
+        target: inMatch[1],
+        container: inMatch[2],
+        raw,
+      };
+    }
+    // If just "put X" without destination, return unknown
+    return {
+      action: 'unknown',
       raw,
     };
   }

@@ -13,6 +13,10 @@ export interface Item {
   name: string;
   description: string;
   takeable: boolean;
+  size: number; // How much space the item takes up
+  isContainer: boolean; // Whether this item can hold other items
+  capacity?: number; // If container, how much it can hold (optional, defaults to infinite)
+  containedItems: string[]; // Item IDs inside this container
 }
 
 export interface Player {
@@ -37,11 +41,12 @@ export interface CommandResult {
   newRoomId?: string;
 }
 
-export type CommandAction = 'move' | 'look' | 'inventory' | 'take' | 'drop' | 'examine' | 'help' | 'unknown';
+export type CommandAction = 'move' | 'look' | 'inventory' | 'take' | 'drop' | 'examine' | 'put' | 'help' | 'unknown';
 
 export interface ParsedCommand {
   action: CommandAction;
   direction?: Direction;
   target?: string;
+  container?: string; // For "put X in Y" commands
   raw: string;
 }

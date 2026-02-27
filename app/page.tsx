@@ -2,16 +2,28 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { parseCommand } from '@/utils/commandParser';
+import { GameEngine } from '@/utils/gameEngine';
+import { sampleWorld } from '@/data/sampleWorld';
 
 export default function Home() {
+  // Initialize game engine with sample world
+  const [engine] = useState(() => new GameEngine(sampleWorld, 'player1'));
+  
   const [input, setInput] = useState('');
-  const [output, setOutput] = useState<string[]>([
-    'Welcome to Leaves - A Text Adventure',
-    '---',
-    'Type "help" for available commands',
-    '',
-  ]);
+  const [output, setOutput] = useState<string[]>([]);
   const outputEndRef = useRef<HTMLDivElement>(null);
+
+  // Show initial room description on mount
+  useEffect(() => {
+    const initialRoom = engine.look();
+    setOutput([
+      'Welcome to Leaves - A Text Adventure',
+      '---',
+      '',
+      initialRoom.message,
+      '',
+    ]);
+  }, [engine]);
 
   // Auto-scroll to bottom when output changes
   useEffect(() => {
@@ -26,36 +38,60 @@ export default function Home() {
     const command = parseCommand(input);
     const newOutput = [...output, `> ${input}`];
 
-    // Handle different command actions
+    let result;
+
+    // Handle different command actions using the game engine
     switch (command.action) {
       case 'move':
-        newOutput.push(`You move ${command.direction}.`);
+        result = engine.move(command.direction!);
+        newOutput.push(result.message);
         break;
       case 'look':
-        newOutput.push('You look around. (Room description will go here)');
+        result = engine.look();
+        newOutput.push(result.message);
         break;
       case 'inventory':
-        newOutput.push('Your inventory is empty.');
+        result = engine.getInventory();
+        newOutput.push(result.message);
         break;
       case 'examine':
-        newOutput.push(`You examine the ${command.target}.`);
+        result = engine.examineItem(command.target!);
+        newOutput.push(result.message);
         break;
       case 'take':
-        newOutput.push(`You take the ${command.target}.`);
+        if (command.container) {
+          // Take from container
+          result = engine.takeItemFromContainer(command.target!, command.container);
+        } else {
+          // Take from room
+          result = engine.takeItem(command.target!);
+        }
+        newOutput.push(result.message);
         break;
       case 'drop':
-        newOutput.push(`You drop the ${command.target}.`);
+        result = engine.dropItem(command.target!);
+        newOutput.push(result.message);
+        break;
+      case 'put':
+        result = engine.putItemInContainer(command.target!, command.container!);
+        newOutput.push(result.message);
         break;
       case 'help':
         newOutput.push(
           'Available commands:',
-          'Movement: north/n, south/s, east/e, west/w, up/u, down/d',
-          'Actions: look, inventory/i, take [item], drop [item], examine [item]',
-          'Other: help'
+          '  Movement: north/n, south/s, east/e, west/w, up/u, down/d',
+          '  Actions: look, inventory/i, take [item], drop [item], examine [item]',
+          '  Containers: put [item] in [container], take [item] from [container]',
+          '  Other: help'
         );
         break;
       default:
-        newOutput.push("I don't understand that command. Type 'help' for available commands.");
+        // Check if it's an incomplete "put" command
+        if (input.trim().toLowerCase().startsWith('put ')) {
+          newOutput.push("Put what where? Try: put [item] in [container]");
+        } else {
+          newOutput.push("I don't understand that command. Type 'help' for available commands.");
+        }
     }
 
     newOutput.push('');

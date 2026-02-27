@@ -74,6 +74,41 @@ describe('commandParser', () => {
     });
   });
 
+  describe('container commands', () => {
+    it('should parse "put sword in backpack"', () => {
+      const result = parseCommand('put sword in backpack');
+      expect(result.action).toBe('put');
+      expect(result.target).toBe('sword');
+      expect(result.container).toBe('backpack');
+    });
+
+    it('should parse "put sword into backpack"', () => {
+      const result = parseCommand('put sword into backpack');
+      expect(result.action).toBe('put');
+      expect(result.target).toBe('sword');
+      expect(result.container).toBe('backpack');
+    });
+
+    it('should parse "put sword inside backpack"', () => {
+      const result = parseCommand('put sword inside backpack');
+      expect(result.action).toBe('put');
+      expect(result.target).toBe('sword');
+      expect(result.container).toBe('backpack');
+    });
+
+    it('should parse "put sword" as unknown', () => {
+      const result = parseCommand('put sword');
+      expect(result.action).toBe('unknown');
+    });
+
+    it('should parse "take sword from backpack"', () => {
+      const result = parseCommand('take sword from backpack');
+      expect(result.action).toBe('take');
+      expect(result.target).toBe('sword');
+      expect(result.container).toBe('backpack');
+    });
+  });
+
   describe('help command', () => {
     it('should parse "help"', () => {
       const result = parseCommand('help');
