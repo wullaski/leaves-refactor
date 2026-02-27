@@ -17,6 +17,9 @@ export interface Item {
   isContainer: boolean; // Whether this item can hold other items
   capacity?: number; // If container, how much it can hold (optional, defaults to infinite)
   containedItems: string[]; // Item IDs inside this container
+  isLockable: boolean; // Whether this item can be locked
+  isLocked: boolean; // Whether this item is currently locked
+  keyId?: string; // ID of the key that locks/unlocks this item (optional)
 }
 
 export interface Player {
@@ -41,7 +44,7 @@ export interface CommandResult {
   newRoomId?: string;
 }
 
-export type CommandAction = 'move' | 'look' | 'inventory' | 'take' | 'drop' | 'examine' | 'put' | 'help' | 'unknown';
+export type CommandAction = 'move' | 'look' | 'inventory' | 'take' | 'drop' | 'examine' | 'put' | 'lock' | 'unlock' | 'help' | 'unknown';
 
 export interface ParsedCommand {
   action: CommandAction;

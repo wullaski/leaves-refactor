@@ -118,6 +118,24 @@ export function parseCommand(input: string): ParsedCommand {
     };
   }
 
+  // Check for lock
+  if (firstWord === 'lock' && restWords) {
+    return {
+      action: 'lock',
+      target: restWords,
+      raw,
+    };
+  }
+
+  // Check for unlock
+  if (firstWord === 'unlock' && restWords) {
+    return {
+      action: 'unlock',
+      target: restWords,
+      raw,
+    };
+  }
+
   // Check for help
   if (firstWord === 'help') {
     return { action: 'help', raw };

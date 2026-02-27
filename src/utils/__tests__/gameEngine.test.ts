@@ -18,7 +18,7 @@ describe('GameEngine', () => {
           name: 'Room One',
           description: 'The first room.',
           exits: { north: 'room2' },
-          items: ['sword'],
+          items: ['sword', 'chest', 'key', 'coin'],
         },
         'room2': {
           id: 'room2',
@@ -37,6 +37,8 @@ describe('GameEngine', () => {
           size: 2,
           isContainer: false,
           containedItems: [],
+          isLockable: false,
+          isLocked: false,
         },
         'statue': {
           id: 'statue',
@@ -46,6 +48,8 @@ describe('GameEngine', () => {
           size: 50,
           isContainer: false,
           containedItems: [],
+          isLockable: false,
+          isLocked: false,
         },
         'bag': {
           id: 'bag',
@@ -56,6 +60,8 @@ describe('GameEngine', () => {
           isContainer: true,
           capacity: 5,
           containedItems: [],
+          isLockable: false,
+          isLocked: false,
         },
         'coin': {
           id: 'coin',
@@ -65,6 +71,32 @@ describe('GameEngine', () => {
           size: 1,
           isContainer: false,
           containedItems: [],
+          isLockable: false,
+          isLocked: false,
+        },
+        'chest': {
+          id: 'chest',
+          name: 'locked chest',
+          description: 'A sturdy chest with a lock.',
+          takeable: false,
+          size: 10,
+          isContainer: true,
+          capacity: 20,
+          containedItems: [],
+          isLockable: true,
+          isLocked: true,
+          keyId: 'key',
+        },
+        'key': {
+          id: 'key',
+          name: 'brass key',
+          description: 'A small brass key.',
+          takeable: true,
+          size: 1,
+          isContainer: false,
+          containedItems: [],
+          isLockable: false,
+          isLocked: false,
         },
       },
       players: {
@@ -358,6 +390,87 @@ describe('GameEngine', () => {
       
       expect(result.success).toBe(false);
       expect(result.message).toContain("don't see");
+    });
+  });
+
+  describe('locking', () => {
+    it('should unlock a locked container with the correct key', () => {
+      engine.takeItem('key');
+      
+      const result = engine.unlockItem('chest');
+      
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('unlock');
+      expect(testWorld.items['chest'].isLocked).toBe(false);
+    });
+
+    it('should not unlock without the correct key', () => {
+      const result = engine.unlockItem('chest');
+      
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("don't have");
+    });
+
+    it('should not unlock an item that is not lockable', () => {
+      engine.takeItem('key');
+      
+      const result = engine.unlockItem('sword');
+      
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("can't be locked");
+    });
+
+    it('should not unlock an already unlocked item', () => {
+      engine.takeItem('key');
+      engine.unlockItem('chest');
+      
+      const result = engine.unlockItem('chest');
+      
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('already unlocked');
+    });
+
+    it('should lock an unlocked container with the correct key', () => {
+      engine.takeItem('key');
+      engine.unlockItem('chest');
+      
+      const result = engine.lockItem('chest');
+      
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('lock');
+      expect(testWorld.items['chest'].isLocked).toBe(true);
+    });
+
+    it('should not lock an already locked item', () => {
+      const result = engine.lockItem('chest');
+      
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('already locked');
+    });
+
+    it('should not access locked container contents', () => {
+      testWorld.items['chest'].containedItems.push('coin');
+      
+      const result = engine.takeItemFromContainer('coin', 'chest');
+      
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('locked');
+    });
+
+    it('should not put items in locked container', () => {
+      engine.takeItem('coin');
+      
+      const result = engine.putItemInContainer('coin', 'chest');
+      
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('locked');
+    });
+
+    it('should show locked status when examining', () => {
+      const result = engine.examineItem('chest');
+      
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('locked');
     });
   });
 });

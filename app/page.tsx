@@ -76,12 +76,21 @@ export default function Home() {
         result = engine.putItemInContainer(command.target!, command.container!);
         newOutput.push(result.message);
         break;
+      case 'lock':
+        result = engine.lockItem(command.target!);
+        newOutput.push(result.message);
+        break;
+      case 'unlock':
+        result = engine.unlockItem(command.target!);
+        newOutput.push(result.message);
+        break;
       case 'help':
         newOutput.push(
           'Available commands:',
           '  Movement: north/n, south/s, east/e, west/w, up/u, down/d',
           '  Actions: look, inventory/i, take [item], drop [item], examine [item]',
           '  Containers: put [item] in [container], take [item] from [container]',
+          '  Locking: lock [item], unlock [item]',
           '  Other: help'
         );
         break;

@@ -210,14 +210,21 @@ export class GameEngine {
     const item = this.world.items[itemId];
     let message = item.description;
 
-    // If it's a container, show contents
-    if (item.isContainer && item.containedItems.length > 0) {
+    // Show locked status if lockable
+    if (item.isLockable) {
+      message += item.isLocked ? '\n\n(locked)' : '\n\n(unlocked)';
+    }
+
+    // If it's a container, show contents (only if unlocked)
+    if (item.isContainer && !item.isLocked && item.containedItems.length > 0) {
       const contentNames = item.containedItems
         .map(id => this.world.items[id]?.name)
         .filter(Boolean);
       message += `\n\nContains:\n  ${contentNames.join('\n  ')}`;
-    } else if (item.isContainer) {
+    } else if (item.isContainer && !item.isLocked) {
       message += '\n\n(empty)';
+    } else if (item.isContainer && item.isLocked) {
+      message += '\n\nYou cannot see inside while it is locked.';
     }
 
     return {
@@ -274,6 +281,14 @@ export class GameEngine {
       };
     }
 
+    // Check if container is locked
+    if (container.isLocked) {
+      return {
+        success: false,
+        message: `The ${container.name} is locked.`,
+      };
+    }
+
     // Check capacity
     if (container.capacity !== undefined) {
       const currentSize = container.containedItems.reduce(
@@ -322,6 +337,14 @@ export class GameEngine {
       };
     }
 
+    // Check if container is locked
+    if (container.isLocked) {
+      return {
+        success: false,
+        message: `The ${container.name} is locked.`,
+      };
+    }
+
     // Item must be in container
     if (!container.containedItems.includes(itemId)) {
       return {
@@ -337,6 +360,122 @@ export class GameEngine {
     return {
       success: true,
       message: `You take the ${item.name} from the ${container.name}.`,
+    };
+  }
+
+  lockItem(itemIdOrName: string): CommandResult {
+    const itemId = this.findItemByName(itemIdOrName);
+    
+    if (!itemId) {
+      return {
+        success: false,
+        message: `You don't see that here.`,
+      };
+    }
+
+    const room = this.getCurrentRoom();
+    const player = this.world.players[this.playerId];
+    const item = this.world.items[itemId];
+
+    // Check if item is accessible
+    const isInRoom = room.items.includes(itemId);
+    const isInInventory = player.inventory.includes(itemId);
+
+    if (!isInRoom && !isInInventory) {
+      return {
+        success: false,
+        message: `You don't see the ${item.name} here.`,
+      };
+    }
+
+    // Check if item is lockable
+    if (!item.isLockable) {
+      return {
+        success: false,
+        message: `The ${item.name} can't be locked.`,
+      };
+    }
+
+    // Check if already locked
+    if (item.isLocked) {
+      return {
+        success: false,
+        message: `The ${item.name} is already locked.`,
+      };
+    }
+
+    // Check if player has the key
+    if (item.keyId && !player.inventory.includes(item.keyId)) {
+      return {
+        success: false,
+        message: `You don't have the item to lock the ${item.name}.`,
+      };
+    }
+
+    // Lock the item
+    item.isLocked = true;
+
+    return {
+      success: true,
+      message: `You lock the ${item.name}.`,
+    };
+  }
+
+  unlockItem(itemIdOrName: string): CommandResult {
+    const itemId = this.findItemByName(itemIdOrName);
+    
+    if (!itemId) {
+      return {
+        success: false,
+        message: `You don't see that here.`,
+      };
+    }
+
+    const room = this.getCurrentRoom();
+    const player = this.world.players[this.playerId];
+    const item = this.world.items[itemId];
+
+    // Check if item is accessible
+    const isInRoom = room.items.includes(itemId);
+    const isInInventory = player.inventory.includes(itemId);
+
+    if (!isInRoom && !isInInventory) {
+      return {
+        success: false,
+        message: `You don't see the ${item.name} here.`,
+      };
+    }
+
+    // Check if item is lockable
+    if (!item.isLockable) {
+      return {
+        success: false,
+        message: `The ${item.name} can't be locked or unlocked.`,
+      };
+    }
+
+    // Check if already unlocked
+    if (!item.isLocked) {
+      return {
+        success: false,
+        message: `The ${item.name} is already unlocked.`,
+      };
+    }
+
+    // Check if player has the key
+    if (item.keyId && !player.inventory.includes(item.keyId)) {
+      return {
+        success: false,
+        message: `You don't have the item to unlock the ${item.name}.`,
+      };
+    }
+
+    // Unlock the item
+    item.isLocked = false;
+
+    return {
+      success: true,
+      message: `You unlock the ${item.name}.`,
     };
   }
 }

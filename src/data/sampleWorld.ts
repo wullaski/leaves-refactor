@@ -12,7 +12,7 @@ export const sampleWorld: World = {
       exits: {
         north: 'garden',
       },
-      items: ['key'],
+      items: ['key', 'chest'],
     },
     'garden': {
       id: 'garden',
@@ -21,7 +21,7 @@ export const sampleWorld: World = {
       exits: {
         south: 'entrance',
       },
-      items: ['flower', 'backpack'],
+      items: ['backpack'],
     },
   },
   items: {
@@ -33,6 +33,21 @@ export const sampleWorld: World = {
       size: 1,
       isContainer: false,
       containedItems: [],
+      isLockable: false,
+      isLocked: false,
+    },
+    'chest': {
+      id: 'chest',
+      name: 'wooden chest',
+      description: 'A small wooden chest with a rusty lock. It looks old and worn.',
+      takeable: false,
+      size: 5,
+      isContainer: true,
+      capacity: 10,
+      containedItems: ['flower'],
+      isLockable: true,
+      isLocked: true,
+      keyId: 'key',
     },
     'flower': {
       id: 'flower',
@@ -42,6 +57,8 @@ export const sampleWorld: World = {
       size: 1,
       isContainer: false,
       containedItems: [],
+      isLockable: false,
+      isLocked: false,
     },
     'backpack': {
       id: 'backpack',
@@ -52,6 +69,8 @@ export const sampleWorld: World = {
       isContainer: true,
       capacity: 10,
       containedItems: [],
+      isLockable: false,
+      isLocked: false,
     },
   },
   players: {
