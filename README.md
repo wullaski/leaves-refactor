@@ -40,10 +40,10 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 - [ ] default could return help for verbs
 - [ ] should be able to take from containers in the room as long as they are unlocked or known to the player
-- [ ] hidden items there's something under the rug or amongst the barrels
+- [x] hidden items
 - [ ] hidden tunnels or paths
 - [ ] darkness need a light source
-- [ ] locked items
+- [x] locked items
 - [ ] locked doors (barricaded doors)
 - [ ] combining items
 - [ ] burning items

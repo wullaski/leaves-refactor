@@ -17,9 +17,10 @@ export interface Item {
   isContainer: boolean; // Whether this item can hold other items
   capacity?: number; // If container, how much it can hold (optional, defaults to infinite)
   containedItems: string[]; // Item IDs inside this container
-  isLockable: boolean; // Whether this item can be locked
   isLocked: boolean; // Whether this item is currently locked
-  keyId?: string; // ID of the key that locks/unlocks this item (optional)
+  keyId?: string; // ID of the key that locks/unlocks this item (optional, if present the item is lockable)
+  isHidden: boolean; // Whether this item starts hidden (player-based awareness)
+  hiddenBy?: string; // ID of the item that hides this item (optional, if present this item can only be found by examining that item)
 }
 
 export interface Player {
@@ -27,6 +28,7 @@ export interface Player {
   name: string;
   currentRoomId: string;
   inventory: string[]; // item IDs
+  knownItems: string[]; // item IDs the player is aware of
 }
 
 export interface World {

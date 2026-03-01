@@ -55,7 +55,7 @@ export default function Home() {
         newOutput.push(result.message);
         break;
       case 'examine':
-        result = engine.examineItem(command.target!);
+        result = engine.examineItem(command.target);
         newOutput.push(result.message);
         break;
       case 'take':
@@ -88,7 +88,8 @@ export default function Home() {
         newOutput.push(
           'Available commands:',
           '  Movement: north/n, south/s, east/e, west/w, up/u, down/d',
-          '  Actions: look, inventory/i, take [item], drop [item], examine [item]',
+          '  Actions: look, inventory/i, take [item], drop [item]',
+          '  Examine: examine, examine [item] - search area or inspect specific item',
           '  Containers: put [item] in [container], take [item] from [container]',
           '  Locking: lock [item], unlock [item]',
           '  Other: help'

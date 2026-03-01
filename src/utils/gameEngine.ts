@@ -7,6 +7,25 @@ export class GameEngine {
   constructor(world: World, playerId: string) {
     this.world = world;
     this.playerId = playerId;
+    
+    // Discover visible items in starting room
+    this.discoverVisibleItemsInCurrentRoom();
+  }
+
+  private discoverVisibleItemsInCurrentRoom(): void {
+    const room = this.getCurrentRoom();
+    const player = this.world.players[this.playerId];
+    
+    // Add all visible items in the room to knownItems
+    room.items.forEach(itemId => {
+      const item = this.world.items[itemId];
+      // Add if not hidden and not hidden by another item and not already known
+      if (!item.isHidden && 
+          !item.hiddenBy && 
+          !player.knownItems.includes(itemId)) {
+        player.knownItems.push(itemId);
+      }
+    });
   }
 
   getCurrentRoom(): Room {
@@ -29,6 +48,9 @@ export class GameEngine {
     
     // Update player's location
     this.world.players[this.playerId].currentRoomId = nextRoomId;
+    
+    // Discover visible items in the new room
+    this.discoverVisibleItemsInCurrentRoom();
 
     return {
       success: true,
@@ -46,6 +68,7 @@ export class GameEngine {
   }
 
   private describeRoom(room: Room): string {
+    const player = this.world.players[this.playerId];
     const parts: string[] = [];
     
     // Room name and description
@@ -60,13 +83,14 @@ export class GameEngine {
       parts.push('\nNo obvious exits.');
     }
 
-    // Items in room (if any)
+    // Items in room (only show known items)
     if (room.items.length > 0) {
-      const itemNames = room.items
+      const knownItemsInRoom = room.items
+        .filter(itemId => player.knownItems.includes(itemId))
         .map(itemId => this.world.items[itemId]?.name)
         .filter(Boolean);
-      if (itemNames.length > 0) {
-        parts.push(`\nYou see: ${itemNames.join(', ')}`);
+      if (knownItemsInRoom.length > 0) {
+        parts.push(`\nYou see: ${knownItemsInRoom.join(', ')}`);
       }
     }
 
@@ -90,6 +114,34 @@ export class GameEngine {
     return null;
   }
 
+  private findContainerWithItem(itemId: string, room: Room, player: Player): string | null {
+    // Check all items in the room
+    for (const containerId of room.items) {
+      const container = this.world.items[containerId];
+      // Only check containers the player knows about
+      if (container.isContainer && 
+          player.knownItems.includes(containerId) && 
+          container.containedItems.includes(itemId) &&
+          player.knownItems.includes(itemId)) {
+        return containerId;
+      }
+    }
+    
+    // Check all items in player's inventory
+    for (const containerId of player.inventory) {
+      const container = this.world.items[containerId];
+      // Only check containers the player knows about
+      if (container.isContainer && 
+          player.knownItems.includes(containerId) && 
+          container.containedItems.includes(itemId) &&
+          player.knownItems.includes(itemId)) {
+        return containerId;
+      }
+    }
+    
+    return null;
+  }
+
   takeItem(itemIdOrName: string): CommandResult {
     const itemId = this.findItemByName(itemIdOrName);
     
@@ -105,6 +157,24 @@ export class GameEngine {
 
     // Check if item is in the room
     if (!room.items.includes(itemId)) {
+      // Check if item is in a known container in the room
+      const containerWithItem = this.findContainerWithItem(itemId, room, player);
+      if (containerWithItem) {
+        const item = this.world.items[itemId];
+        const container = this.world.items[containerWithItem];
+        return {
+          success: false,
+          message: `You don't see the ${item.name} here. (It's in the ${container.name} - try: take ${item.name} from ${container.name})`,
+        };
+      }
+      return {
+        success: false,
+        message: `You don't see that here.`,
+      };
+    }
+
+    // Check if player knows about this item
+    if (!player.knownItems.includes(itemId)) {
       return {
         success: false,
         message: `You don't see that here.`,
@@ -123,6 +193,11 @@ export class GameEngine {
     // Remove from room and add to inventory
     room.items = room.items.filter(id => id !== itemId);
     player.inventory.push(itemId);
+
+    // Ensure item is in knownItems (should already be, but just in case)
+    if (!player.knownItems.includes(itemId)) {
+      player.knownItems.push(itemId);
+    }
 
     return {
       success: true,
@@ -183,7 +258,41 @@ export class GameEngine {
     };
   }
 
-  examineItem(itemIdOrName: string): CommandResult {
+  examineItem(itemIdOrName?: string): CommandResult {
+    const room = this.getCurrentRoom();
+    const player = this.world.players[this.playerId];
+
+    // If no target specified, search the room for hidden items
+    if (!itemIdOrName) {
+      // Only reveal hidden items that are NOT hidden by another specific item
+      const newItems = room.items.filter(itemId => {
+        const item = this.world.items[itemId];
+        return item.isHidden && 
+               !player.knownItems.includes(itemId) &&
+               !item.hiddenBy;
+      });
+      
+      if (newItems.length === 0) {
+        return {
+          success: true,
+          message: 'You examine the area carefully but find nothing new.',
+        };
+      }
+      
+      // Add discovered items to known items
+      newItems.forEach(itemId => player.knownItems.push(itemId));
+      
+      const itemNames = newItems
+        .map(itemId => this.world.items[itemId]?.name)
+        .filter(Boolean);
+      
+      return {
+        success: true,
+        message: `You examine the area and discover: ${itemNames.join(', ')}`,
+      };
+    }
+
+    // Target specified - examine specific item
     const itemId = this.findItemByName(itemIdOrName);
     
     if (!itemId) {
@@ -192,9 +301,6 @@ export class GameEngine {
         message: `You don't see that here.`,
       };
     }
-
-    const room = this.getCurrentRoom();
-    const player = this.world.players[this.playerId];
 
     // Check if item is in room or inventory
     const isInRoom = room.items.includes(itemId);
@@ -207,24 +313,58 @@ export class GameEngine {
       };
     }
 
+    // Player must know about the item to examine it specifically
+    if (!player.knownItems.includes(itemId)) {
+      return {
+        success: false,
+        message: `You don't see that here.`,
+      };
+    }
+
     const item = this.world.items[itemId];
     let message = item.description;
 
-    // Show locked status if lockable
-    if (item.isLockable) {
-      message += item.isLocked ? '\n\n(locked)' : '\n\n(unlocked)';
+    // Show locked status if lockable (has a keyId)
+    if (item.keyId) {
+      if (item.isLocked) {
+        message += `\n\nThe ${item.name} is locked.`;
+      } else {
+        message += `\n\nThe ${item.name} is unlocked.`;
+      }
     }
 
     // If it's a container, show contents (only if unlocked)
     if (item.isContainer && !item.isLocked && item.containedItems.length > 0) {
+      // Add container contents to known items when examining
+      item.containedItems.forEach(contentId => {
+        if (!player.knownItems.includes(contentId)) {
+          player.knownItems.push(contentId);
+        }
+      });
+      
       const contentNames = item.containedItems
         .map(id => this.world.items[id]?.name)
         .filter(Boolean);
-      message += `\n\nContains:\n  ${contentNames.join('\n  ')}`;
+      message += `\n\nInside you see:\n  ${contentNames.join('\n  ')}`;
     } else if (item.isContainer && !item.isLocked) {
-      message += '\n\n(empty)';
-    } else if (item.isContainer && item.isLocked) {
-      message += '\n\nYou cannot see inside while it is locked.';
+      message += '\n\nIt is empty.';
+    }
+
+    // Reveal items hidden by this item
+    const hiddenItems = room.items.filter(hiddenItemId => {
+      const hiddenItem = this.world.items[hiddenItemId];
+      return hiddenItem && hiddenItem.hiddenBy === itemId && !player.knownItems.includes(hiddenItemId);
+    });
+    
+    if (hiddenItems.length > 0) {
+      // Add discovered items to known items
+      hiddenItems.forEach(hiddenId => player.knownItems.push(hiddenId));
+      
+      const discoveredNames = hiddenItems
+        .map(hiddenId => this.world.items[hiddenId]?.name)
+        .filter(Boolean);
+      
+      message += `\n\nBut you discover: ${discoveredNames.join(', ')}`;
     }
 
     return {
@@ -353,6 +493,14 @@ export class GameEngine {
       };
     }
 
+    // Player must know about the item (discovered by examining the container)
+    if (!player.knownItems.includes(itemId)) {
+      return {
+        success: false,
+        message: `You don't know about that item. Try examining the ${container.name} first.`,
+      };
+    }
+
     // Transfer item
     container.containedItems = container.containedItems.filter(id => id !== itemId);
     player.inventory.push(itemId);
@@ -388,8 +536,8 @@ export class GameEngine {
       };
     }
 
-    // Check if item is lockable
-    if (!item.isLockable) {
+    // Check if item is lockable (has a keyId)
+    if (!item.keyId) {
       return {
         success: false,
         message: `The ${item.name} can't be locked.`,
@@ -446,8 +594,8 @@ export class GameEngine {
       };
     }
 
-    // Check if item is lockable
-    if (!item.isLockable) {
+    // Check if item is lockable (has a keyId)
+    if (!item.keyId) {
       return {
         success: false,
         message: `The ${item.name} can't be locked or unlocked.`,
@@ -473,9 +621,28 @@ export class GameEngine {
     // Unlock the item
     item.isLocked = false;
 
+    let message = `You unlock the ${item.name}.`;
+
+    // If it's a container, reveal contents
+    if (item.isContainer && item.containedItems.length > 0) {
+      // Add container contents to known items
+      item.containedItems.forEach(contentId => {
+        if (!player.knownItems.includes(contentId)) {
+          player.knownItems.push(contentId);
+        }
+      });
+      
+      const contentNames = item.containedItems
+        .map(id => this.world.items[id]?.name)
+        .filter(Boolean);
+      message += `\n\nInside you see:\n  ${contentNames.join('\n  ')}`;
+    } else if (item.isContainer) {
+      message += '\n\nIt is empty.';
+    }
+
     return {
       success: true,
-      message: `You unlock the ${item.name}.`,
+      message,
     };
   }
 }

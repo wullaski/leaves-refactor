@@ -62,11 +62,11 @@ export function parseCommand(input: string): ParsedCommand {
     return { action: 'inventory', raw };
   }
 
-  // Check for examine
-  if (EXAMINE_VERBS.includes(firstWord) && restWords) {
+  // Check for examine (can be with or without target)
+  if (EXAMINE_VERBS.includes(firstWord)) {
     return {
       action: 'examine',
-      target: restWords,
+      target: restWords || undefined,
       raw,
     };
   }

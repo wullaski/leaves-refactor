@@ -37,6 +37,12 @@ describe('commandParser', () => {
       expect(result.action).toBe('look');
     });
 
+    it('should parse "examine" without target', () => {
+      const result = parseCommand('examine');
+      expect(result.action).toBe('examine');
+      expect(result.target).toBeUndefined();
+    });
+
     it('should parse "examine sword"', () => {
       const result = parseCommand('examine sword');
       expect(result.action).toBe('examine');
