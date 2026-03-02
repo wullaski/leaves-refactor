@@ -38,7 +38,6 @@ describe('GameEngine', () => {
           isContainer: false,
           containedItems: [],
           isLocked: false,
-          isHidden: false,
         },
         'statue': {
           id: 'statue',
@@ -49,7 +48,6 @@ describe('GameEngine', () => {
           isContainer: false,
           containedItems: [],
           isLocked: false,
-          isHidden: false,
         },
         'bag': {
           id: 'bag',
@@ -61,7 +59,6 @@ describe('GameEngine', () => {
           capacity: 5,
           containedItems: [],
           isLocked: false,
-          isHidden: false,
         },
         'coin': {
           id: 'coin',
@@ -72,7 +69,6 @@ describe('GameEngine', () => {
           isContainer: false,
           containedItems: [],
           isLocked: false,
-          isHidden: false,
         },
         'chest': {
           id: 'chest',
@@ -85,7 +81,6 @@ describe('GameEngine', () => {
           containedItems: [],
           isLocked: true,
           keyId: 'key',
-          isHidden: false,
         },
         'key': {
           id: 'key',
@@ -96,7 +91,6 @@ describe('GameEngine', () => {
           isContainer: false,
           containedItems: [],
           isLocked: false,
-          isHidden: false,
         },
       },
       players: {
@@ -253,7 +247,7 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: true,
+        hiddenBy: 'room1',
       };
       
       const result = engine.examineItem('secret scroll');
@@ -349,7 +343,6 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: false,
       };
       testWorld.players['player1'].knownItems.push('sword2');
       
@@ -402,7 +395,6 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: false,
       };
       testWorld.items['chest'].containedItems.push('gem');
       testWorld.items['chest'].isLocked = false; // Unlock for this test
@@ -426,7 +418,6 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: false,
       };
       testWorld.items['chest'].containedItems.push('gem');
       testWorld.items['chest'].isLocked = false;
@@ -637,7 +628,7 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: true,
+        hiddenBy: 'room1',
       };
       // Player doesn't know about it yet
       
@@ -660,7 +651,7 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: true,
+        hiddenBy: 'room1',
       };
       
       const result = engine.examineItem();
@@ -682,7 +673,6 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: true,
         hiddenBy: 'chest',
       };
       
@@ -705,7 +695,7 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: true,
+        hiddenBy: 'room1',
       };
       
       const result = engine.takeItem('secret note');
@@ -717,8 +707,6 @@ describe('GameEngine', () => {
     it('should add taken items to known items', () => {
       // Remove sword from known items
       testWorld.players['player1'].knownItems = testWorld.players['player1'].knownItems.filter(id => id !== 'sword');
-      // But make it not hidden
-      testWorld.items['sword'].isHidden = false;
       // Manually add it back to known for this test
       testWorld.players['player1'].knownItems.push('sword');
       
@@ -740,7 +728,6 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: true,
         hiddenBy: 'chest',
       };
       
@@ -788,7 +775,6 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: false,
       };
       
       const player = testWorld.players['player1'];
@@ -815,7 +801,7 @@ describe('GameEngine', () => {
         isContainer: false,
         containedItems: [],
         isLocked: false,
-        isHidden: true,
+        hiddenBy: 'room1',
       };
       
       const freshEngine = new GameEngine(freshWorld, 'player1');
@@ -823,6 +809,52 @@ describe('GameEngine', () => {
       
       // Should not know about hidden gem
       expect(player.knownItems).not.toContain('hiddengem');
+    });
+
+    it('should discover items hidden by room when examining area', () => {
+      // Add an item hidden by the room itself
+      testWorld.rooms['room1'].items.push('secretpassage');
+      testWorld.items['secretpassage'] = {
+        id: 'secretpassage',
+        name: 'secret passage',
+        description: 'A hidden passage behind loose stones.',
+        takeable: false,
+        size: 10,
+        isContainer: false,
+        containedItems: [],
+        isLocked: false,
+        hiddenBy: 'room1', // Hidden by the room itself
+      };
+      
+      // Examine the area - should find the passage
+      const result = engine.examineItem();
+      
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('secret passage');
+      expect(testWorld.players['player1'].knownItems).toContain('secretpassage');
+    });
+
+    it('should NOT discover items hidden by room when in different room', () => {
+      // Add an item hidden by room2
+      testWorld.rooms['room1'].items.push('specialitem');
+      testWorld.items['specialitem'] = {
+        id: 'specialitem',
+        name: 'special item',
+        description: 'An item hidden by room2.',
+        takeable: true,
+        size: 1,
+        isContainer: false,
+        containedItems: [],
+        isLocked: false,
+        hiddenBy: 'room2', // Hidden by room2, but we're in room1
+      };
+      
+      // Examine the area in room1 - should NOT find the item (it's hidden by room2)
+      const result = engine.examineItem();
+      
+      expect(result.success).toBe(true);
+      expect(result.message).not.toContain('special item');
+      expect(testWorld.players['player1'].knownItems).not.toContain('specialitem');
     });
   });
 });

@@ -34,7 +34,6 @@ export const sampleWorld: World = {
       isContainer: false,
       containedItems: [],
       isLocked: false,
-      isHidden: true, // Player needs to search to find this
       hiddenBy: 'chest', // Hidden by the chest - must examine chest to find
     },
     'chest': {
@@ -48,7 +47,6 @@ export const sampleWorld: World = {
       containedItems: ['flower'],
       isLocked: true,
       keyId: 'key',
-      isHidden: false,
     },
     'flower': {
       id: 'flower',
@@ -59,7 +57,6 @@ export const sampleWorld: World = {
       isContainer: false,
       containedItems: [],
       isLocked: false,
-      isHidden: false,
     },
     'backpack': {
       id: 'backpack',
@@ -71,7 +68,6 @@ export const sampleWorld: World = {
       capacity: 10,
       containedItems: [],
       isLocked: false,
-      isHidden: false,
     },
   },
   players: {

@@ -1,4 +1,4 @@
-import type { World, Room, Direction, CommandResult } from '../types/game';
+import type { World, Room, Direction, CommandResult, Player } from '../types/game';
 
 export class GameEngine {
   private world: World;
@@ -16,13 +16,11 @@ export class GameEngine {
     const room = this.getCurrentRoom();
     const player = this.world.players[this.playerId];
     
-    // Add all visible items in the room to knownItems
+    // Add all visible items in the room to knownItems (items that aren't hidden)
     room.items.forEach(itemId => {
       const item = this.world.items[itemId];
-      // Add if not hidden and not hidden by another item and not already known
-      if (!item.isHidden && 
-          !item.hiddenBy && 
-          !player.knownItems.includes(itemId)) {
+      // Add if not hidden and not already known
+      if (!item.hiddenBy && !player.knownItems.includes(itemId)) {
         player.knownItems.push(itemId);
       }
     });
@@ -264,12 +262,12 @@ export class GameEngine {
 
     // If no target specified, search the room for hidden items
     if (!itemIdOrName) {
-      // Only reveal hidden items that are NOT hidden by another specific item
+      const currentRoomId = room.id;
+      
+      // Reveal hidden items that are hidden by THIS room
       const newItems = room.items.filter(itemId => {
         const item = this.world.items[itemId];
-        return item.isHidden && 
-               !player.knownItems.includes(itemId) &&
-               !item.hiddenBy;
+        return item.hiddenBy === currentRoomId && !player.knownItems.includes(itemId);
       });
       
       if (newItems.length === 0) {

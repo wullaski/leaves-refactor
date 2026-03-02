@@ -19,8 +19,7 @@ export interface Item {
   containedItems: string[]; // Item IDs inside this container
   isLocked: boolean; // Whether this item is currently locked
   keyId?: string; // ID of the key that locks/unlocks this item (optional, if present the item is lockable)
-  isHidden: boolean; // Whether this item starts hidden (player-based awareness)
-  hiddenBy?: string; // ID of the item that hides this item (optional, if present this item can only be found by examining that item)
+  hiddenBy?: string; // Optional. If present, item is hidden. ID of the item or room that hides this item. If item ID, found by examining that item. If room ID, found by examining in that room.
 }
 
 export interface Player {
