@@ -2,12 +2,30 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { parseCommand } from '@/utils/commandParser';
-import { GameEngine } from '@/utils/gameEngine';
 import { sampleWorld } from '@/data/sampleWorld';
+import { 
+  initializePlayerInWorld,
+  look,
+  movePlayer,
+  getInventory,
+  examineItem,
+  takeItem,
+  dropItem,
+  takeItemFromContainer,
+  putItemInContainer,
+  openContainer,
+  lockItem,
+  unlockItem
+} from '@/utils/gameActions';
+import type { World } from '@/types/game';
 
 export default function Home() {
-  // Initialize game engine with sample world
-  const [engine] = useState(() => new GameEngine(sampleWorld, 'player1'));
+  const playerId = 'player1';
+  
+  // Initialize world state
+  const [world, setWorld] = useState<World>(() => 
+    initializePlayerInWorld(sampleWorld, playerId)
+  );
   
   const [input, setInput] = useState('');
   const [output, setOutput] = useState<string[]>([]);
@@ -15,7 +33,7 @@ export default function Home() {
 
   // Show initial room description on mount
   useEffect(() => {
-    const initialRoom = engine.look();
+    const [, initialRoom] = look(world, playerId);
     setOutput([
       'Welcome to Leaves - A Text Adventure',
       '---',
@@ -23,7 +41,7 @@ export default function Home() {
       initialRoom.message,
       '',
     ]);
-  }, [engine]);
+  }, []);
 
   // Auto-scroll to bottom when output changes
   useEffect(() => {
@@ -38,50 +56,55 @@ export default function Home() {
     const command = parseCommand(input);
     const newOutput = [...output, `> ${input}`];
 
+    let newWorld = world;
     let result;
 
-    // Handle different command actions using the game engine
+    // Handle different command actions using pure functions
     switch (command.action) {
       case 'move':
-        result = engine.move(command.direction!);
+        [newWorld, result] = movePlayer(world, playerId, command.direction!);
         newOutput.push(result.message);
         break;
       case 'look':
-        result = engine.look();
+        [newWorld, result] = look(world, playerId);
         newOutput.push(result.message);
         break;
       case 'inventory':
-        result = engine.getInventory();
+        [newWorld, result] = getInventory(world, playerId);
         newOutput.push(result.message);
         break;
       case 'examine':
-        result = engine.examineItem(command.target);
+        [newWorld, result] = examineItem(world, playerId, command.target);
         newOutput.push(result.message);
         break;
       case 'take':
         if (command.container) {
           // Take from container
-          result = engine.takeItemFromContainer(command.target!, command.container);
+          [newWorld, result] = takeItemFromContainer(world, playerId, command.target!, command.container);
         } else {
           // Take from room
-          result = engine.takeItem(command.target!);
+          [newWorld, result] = takeItem(world, playerId, command.target!);
         }
         newOutput.push(result.message);
         break;
       case 'drop':
-        result = engine.dropItem(command.target!);
+        [newWorld, result] = dropItem(world, playerId, command.target!);
         newOutput.push(result.message);
         break;
       case 'put':
-        result = engine.putItemInContainer(command.target!, command.container!);
+        [newWorld, result] = putItemInContainer(world, playerId, command.target!, command.container!);
+        newOutput.push(result.message);
+        break;
+      case 'open':
+        [newWorld, result] = openContainer(world, playerId, command.target!);
         newOutput.push(result.message);
         break;
       case 'lock':
-        result = engine.lockItem(command.target!);
+        [newWorld, result] = lockItem(world, playerId, command.target!);
         newOutput.push(result.message);
         break;
       case 'unlock':
-        result = engine.unlockItem(command.target!);
+        [newWorld, result] = unlockItem(world, playerId, command.target!);
         newOutput.push(result.message);
         break;
       case 'help':
@@ -89,8 +112,8 @@ export default function Home() {
           'Available commands:',
           '  Movement: north/n, south/s, east/e, west/w, up/u, down/d',
           '  Actions: look, inventory/i, take [item], drop [item]',
-          '  Examine: examine, examine [item] - search area or inspect specific item',
-          '  Containers: put [item] in [container], take [item] from [container]',
+          '  Examine: examine/search, examine/search [item] - search area or inspect specific item',
+          '  Containers: open/look in [container], put [item] in [container], take [item] from [container]',
           '  Locking: lock [item], unlock [item]',
           '  Other: help'
         );
@@ -105,6 +128,7 @@ export default function Home() {
     }
 
     newOutput.push('');
+    setWorld(newWorld);
     setOutput(newOutput);
     setInput('');
   };

@@ -18,7 +18,7 @@ const DIRECTION_MAP: Record<string, Direction> = {
 const MOVEMENT_VERBS = ['go', 'move', 'walk', 'run', 'head'];
 const TAKE_VERBS = ['take', 'get', 'grab', 'pickup'];
 const DROP_VERBS = ['drop'];
-const EXAMINE_VERBS = ['examine', 'inspect', 'look at', 'x'];
+const EXAMINE_VERBS = ['examine', 'inspect', 'look at', 'search', 'x'];
 const INVENTORY_VERBS = ['inventory', 'inv', 'i'];
 
 export function parseCommand(input: string): ParsedCommand {
@@ -52,7 +52,17 @@ export function parseCommand(input: string): ParsedCommand {
     };
   }
 
-  // Check for look command
+  // Check for "look in [container]" as open command
+  if (firstWord === 'look' && secondWord === 'in' && parts.length > 2) {
+    const containerName = parts.slice(2).join(' ');
+    return {
+      action: 'open',
+      target: containerName,
+      raw,
+    };
+  }
+
+  // Check for look command (just looking around)
   if (firstWord === 'look' && !secondWord) {
     return { action: 'look', raw };
   }
@@ -113,6 +123,15 @@ export function parseCommand(input: string): ParsedCommand {
   if (DROP_VERBS.includes(firstWord) && restWords) {
     return {
       action: 'drop',
+      target: restWords,
+      raw,
+    };
+  }
+
+  // Check for open
+  if (firstWord === 'open' && restWords) {
+    return {
+      action: 'open',
       target: restWords,
       raw,
     };

@@ -49,6 +49,18 @@ describe('commandParser', () => {
       expect(result.target).toBe('sword');
     });
 
+    it('should parse "search" without target', () => {
+      const result = parseCommand('search');
+      expect(result.action).toBe('examine');
+      expect(result.target).toBeUndefined();
+    });
+
+    it('should parse "search room"', () => {
+      const result = parseCommand('search room');
+      expect(result.action).toBe('examine');
+      expect(result.target).toBe('room');
+    });
+
     it('should parse "inventory"', () => {
       const result = parseCommand('inventory');
       expect(result.action).toBe('inventory');
@@ -112,6 +124,38 @@ describe('commandParser', () => {
       expect(result.action).toBe('take');
       expect(result.target).toBe('sword');
       expect(result.container).toBe('backpack');
+    });
+
+    it('should parse "open chest"', () => {
+      const result = parseCommand('open chest');
+      expect(result.action).toBe('open');
+      expect(result.target).toBe('chest');
+    });
+
+    it('should parse "look in chest" as open', () => {
+      const result = parseCommand('look in chest');
+      expect(result.action).toBe('open');
+      expect(result.target).toBe('chest');
+    });
+
+    it('should parse "look in bag" as open', () => {
+      const result = parseCommand('look in bag');
+      expect(result.action).toBe('open');
+      expect(result.target).toBe('bag');
+    });
+  });
+
+  describe('locking commands', () => {
+    it('should parse "lock chest"', () => {
+      const result = parseCommand('lock chest');
+      expect(result.action).toBe('lock');
+      expect(result.target).toBe('chest');
+    });
+
+    it('should parse "unlock chest"', () => {
+      const result = parseCommand('unlock chest');
+      expect(result.action).toBe('unlock');
+      expect(result.target).toBe('chest');
     });
   });
 

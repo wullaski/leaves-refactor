@@ -20,6 +20,7 @@ export interface Item {
   isLocked: boolean; // Whether this item is currently locked
   keyId?: string; // ID of the key that locks/unlocks this item (optional, if present the item is lockable)
   hiddenBy?: string; // Optional. If present, item is hidden. ID of the item or room that hides this item. If item ID, found by examining that item. If room ID, found by examining in that room.
+  discoveryMessage?: string; // Optional. Custom message when item is discovered revealing hidden items. If not set, defaults to "Hidden by the {item}, you find: {items}"
 }
 
 export interface Player {
@@ -45,7 +46,7 @@ export interface CommandResult {
   newRoomId?: string;
 }
 
-export type CommandAction = 'move' | 'look' | 'inventory' | 'take' | 'drop' | 'examine' | 'put' | 'lock' | 'unlock' | 'help' | 'unknown';
+export type CommandAction = 'move' | 'look' | 'inventory' | 'take' | 'drop' | 'examine' | 'put' | 'open' | 'lock' | 'unlock' | 'help' | 'unknown';
 
 export interface ParsedCommand {
   action: CommandAction;
