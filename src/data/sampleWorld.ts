@@ -20,8 +20,48 @@ export const sampleWorld: World = {
       description: 'A small garden with overgrown plants. Sunlight filters through the leaves above. The entrance is to the south.',
       exits: {
         south: 'entrance',
+        east: 'house',
       },
       items: ['backpack'],
+    },
+    'house': {
+      id: 'house',
+      name: 'Abandoned House',
+      description: 'An old, abandoned house. The door creaks as it swings open. The entrance is to the west.',
+      exits: {
+        west: 'garden',
+        east: 'entryway',
+      },
+      items: [],
+    },
+    'entryway': {
+      id: 'entryway',
+      name: 'Entryway',
+      description: 'The entryway of the house. Dusty furniture is scattered around, and cobwebs hang from the ceiling. The door leads back west.',
+      exits: {
+        west: 'house',
+        north: 'secret-room',
+      },
+      items: [],
+    },
+    'secret-room': {
+      id: 'secret-room',
+      name: 'Secret Room',
+      description: 'A hidden room filled with ancient artifacts. The air is thick with mystery. The only exit is back south.',
+      exits: {
+        south: 'entryway',
+        north: 'portal',
+      },
+      items: [],
+    },
+    'portal': {
+      id: 'portal',
+      name: 'Mysterious Portal',
+      description: 'A swirling portal of light and energy. It hums with power and seems to lead to another world. The only exit is north.',
+      exits: {
+        north: 'garden',
+      },
+      items: [],
     },
   },
   items: {
